@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="ja" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家計簿 — Kakeibo</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+/* ═══ Light ═══ */
+:root,[data-theme="light"]{
+  --bg1:#f5f0e8;--bg2:#ede7dc;--bg3:#e8dfd3;--bg4:#f2ece3;
+  --card:rgba(255,255,255,.92);--card-s:#fff;
+  --text:#1e1814;--text2:#4a3f38;--text3:#7a6d62;
+  --accent:#c45d3e;--accent2:#e8a87c;--accent-l:rgba(196,93,62,.1);
+  --green:#3d7a5e;--green2:#5ba882;--green-l:rgba(61,122,94,.1);
+  --blue:#5b7ec8;--blue-l:rgba(91,126,200,.1);
+  --border:rgba(180,168,150,.22);--border-s:rgba(180,168,150,.38);
+  --sh:0 2px 12px rgba(44,37,32,.06),0 1px 3px rgba(44,37,32,.04);
+  --sh-lg:0 8px 32px rgba(44,37,32,.1),0 2px 8px rgba(44,37,32,.06);
+  --r:14px;--r-s:8px;
+  --orb1:rgba(196,93,62,.12);--orb2:rgba(91,126,200,.09);--orb3:rgba(61,122,94,.09);
+  --grid:rgba(140,125,110,.04);--vline:rgba(140,125,110,.07);
+  --glass:rgba(255,255,255,.7);--glass-b:rgba(255,255,255,.5);
+  --row-h:rgba(255,255,255,.6);--inp-bg:rgba(255,255,255,.7);
+  --modal-ov:rgba(30,20,15,.35);
+  --tog-on:#3d7a5e;--tog-off:#c8bfb4;
+  --q-bg:rgba(255,255,255,.65);
+  --entry-bg:rgba(255,255,255,.65);--entry-h:rgba(255,255,255,.88);
+  --badge-bg:rgba(0,0,0,.05);
+}
+[data-theme="dark"]{
+  --bg1:#12101a;--bg2:#181520;--bg3:#1c1826;--bg4:#151220;
+  --card:rgba(30,27,42,.92);--card-s:#262235;
+  --text:#f0ecfa;--text2:#ccc6d8;--text3:#9e96aa;
+  --accent:#e07755;--accent2:#f0a87c;--accent-l:rgba(224,119,85,.14);
+  --green:#5cba88;--green2:#7dd4a6;--green-l:rgba(92,186,136,.14);
+  --blue:#7b9ee8;--blue-l:rgba(123,158,232,.14);
+  --border:rgba(100,90,120,.22);--border-s:rgba(100,90,120,.38);
+  --sh:0 2px 12px rgba(0,0,0,.22),0 1px 3px rgba(0,0,0,.18);
+  --sh-lg:0 8px 32px rgba(0,0,0,.32),0 2px 8px rgba(0,0,0,.22);
+  --r:14px;--r-s:8px;
+  --orb1:rgba(224,119,85,.09);--orb2:rgba(123,158,232,.07);--orb3:rgba(92,186,136,.07);
+  --grid:rgba(100,90,120,.04);--vline:rgba(100,90,120,.08);
+  --glass:rgba(28,25,38,.7);--glass-b:rgba(28,25,38,.5);
+  --row-h:rgba(44,40,58,.6);--inp-bg:rgba(40,36,52,.7);
+  --modal-ov:rgba(0,0,0,.55);
+  --tog-on:#5cba88;--tog-off:#4a4460;
+  --q-bg:rgba(32,28,44,.75);
+  --entry-bg:rgba(42,38,58,.65);--entry-h:rgba(54,50,72,.8);
+  --badge-bg:rgba(255,255,255,.07);
+}
+
+html{font-size:15px;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+body{font-family:'Noto Sans JP','DM Sans',sans-serif;color:var(--text);min-height:100vh;overflow-x:hidden;transition:color .3s}
+input[type=number]{-moz-appearance:textfield}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+button{cursor:pointer;font-family:inherit}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--text3);border-radius:4px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ── Background ── */
+.bg{position:fixed;inset:0;z-index:0;overflow:hidden;
+  background:linear-gradient(155deg,var(--bg1) 0%,var(--bg2) 35%,var(--bg3) 65%,var(--bg4) 100%);
+  transition:background .4s}
+.bg-grid{position:absolute;inset:0;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:48px 48px;pointer-events:none}
+.bg-vlines{position:absolute;inset:0;pointer-events:none}
+.bg-vlines::before,.bg-vlines::after{content:'';position:absolute;top:0;bottom:0;width:1px;background:var(--vline)}
+.bg-vlines::before{left:15%}.bg-vlines::after{right:15%}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;animation:drift 18s ease-in-out infinite}
+.orb1{width:520px;height:520px;background:var(--orb1);top:-120px;left:-100px;animation-delay:0s}
+.orb2{width:420px;height:420px;background:var(--orb2);top:30%;right:-80px;animation-delay:-6s}
+.orb3{width:360px;height:360px;background:var(--orb3);bottom:-80px;left:30%;animation-delay:-12s}
+@keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-20px) scale(1.04)}66%{transform:translate(-20px,30px) scale(.96)}}
+
+/* ── App Layout ── */
+.app{position:relative;z-index:1;max-width:1380px;margin:0 auto;padding:20px 28px 64px}
+
+/* ── Header ── */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:0 0 20px;gap:12px;flex-wrap:wrap}
+.logo{font-family:'Cormorant Garamond',serif;font-size:1.7rem;font-weight:500;letter-spacing:.04em;color:var(--text);line-height:1}
+.logo em{font-style:italic;color:var(--accent);margin-left:6px;font-size:1.1em}
+.hdr-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.month-nav{display:flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--border);border-radius:40px;padding:4px 6px;backdrop-filter:blur(12px)}
+.month-nav button{width:28px;height:28px;border:none;background:transparent;color:var(--text2);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:.2s}
+.month-nav button:hover{background:var(--border);color:var(--text)}
+.month-label{font-size:.9rem;font-weight:600;color:var(--text);padding:0 10px;white-space:nowrap;min-width:90px;text-align:center}
+.hdr-btn{height:34px;padding:0 14px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:.82rem;font-weight:500;backdrop-filter:blur(12px);transition:.2s}
+.hdr-btn:hover{background:var(--card-s);color:var(--text);border-color:var(--border-s)}
+.hdr-btn.primary{background:var(--accent);color:#fff;border-color:transparent}
+.hdr-btn.primary:hover{opacity:.88}
+/* Dark toggle */
+.tog{width:44px;height:24px;border-radius:12px;border:none;background:var(--tog-off);position:relative;transition:.3s;flex-shrink:0}
+.tog::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--tog-knob,#fff);transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+[data-theme="dark"] .tog::after{left:23px}
+[data-theme="dark"] .tog{background:var(--tog-on)}
+
+/* ── Summary Row ── */
+.summ{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+
+.sc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;backdrop-filter:blur(16px);box-shadow:var(--sh);transition:transform .2s,box-shadow .2s}
+.sc:hover{transform:translateY(-2px);box-shadow:var(--sh-lg)}
+.sc-label{font-size:.75rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.sc-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sc-val{font-size:1.5rem;font-weight:700;line-height:1;color:var(--text);font-family:'DM Sans',sans-serif;letter-spacing:-.02em}
+.sc-sub{font-size:.76rem;color:var(--text2);margin-top:5px}
+.sc.savings .sc-val{color:var(--green)}
+.sc.savings.neg .sc-val{color:var(--accent)}
+.main{display:grid;grid-template-columns:1fr 400px;gap:18px;align-items:start}
+
+/* ── Panel ── */
+.panel{background:var(--card);border:1px solid var(--border);border-radius:var(--r);backdrop-filter:blur(16px);box-shadow:var(--sh);overflow:hidden}
+.panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;border-bottom:1px solid var(--border)}
+.panel-title{font-size:.82rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text);display:flex;align-items:center;gap:8px}
+.panel-title-dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.panel-actions{display:flex;gap:6px}
+.icon-btn{width:28px;height:28px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text2);font-size:.8rem;display:flex;align-items:center;justify-content:center;transition:.15s}
+.icon-btn:hover{background:var(--badge-bg);color:var(--text)}
+
+/* ── Category Manager ── */
+.cat-mgr{border-bottom:1px solid var(--border);background:var(--q-bg);backdrop-filter:blur(8px)}
+.cat-mgr-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 6px;cursor:pointer;user-select:none}
+.cat-mgr-label{font-size:.74rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);display:flex;align-items:center;gap:6px}
+.cat-mgr-toggle{font-size:.74rem;color:var(--text2);transition:.2s}
+.cat-chips{padding:4px 12px 10px;display:flex;flex-wrap:wrap;gap:6px}
+.cat-chip{display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 9px 0 7px;border-radius:20px;border:1px solid var(--border-s);background:var(--entry-bg);cursor:pointer;transition:.15s;max-width:140px}
+.cat-chip:hover{background:var(--entry-h);border-color:var(--border-s)}
+.cat-chip.active{border-color:var(--accent);background:var(--accent-l);box-shadow:0 0 0 1px var(--accent)}
+.cc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cc-name{font-size:.8rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px;font-weight:500}
+.cc-del{width:14px;height:14px;border:none;background:transparent;color:var(--text3);font-size:.62rem;opacity:0;transition:.15s;padding:0;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cat-chip:hover .cc-del{opacity:1}
+.cc-del:hover{color:var(--accent)}
+.cat-chip-add{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 11px;border-radius:20px;border:1px dashed var(--border-s);background:transparent;color:var(--text2);font-size:.8rem;cursor:pointer;transition:.15s;white-space:nowrap}
+.cat-chip-add:hover{background:var(--badge-bg);color:var(--text);border-color:var(--accent)}
+/* Chip inline editor */
+.cat-chip-edit{display:flex;align-items:center;gap:6px;padding:8px 12px 10px;border-top:1px solid var(--border);background:var(--entry-h);animation:slideDown .15s ease}
+@keyframes slideDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.ce-color{width:28px;height:28px;border:2px solid var(--border);border-radius:5px;cursor:pointer;padding:0;flex-shrink:0}
+.ce-inp{height:30px;flex:1;background:var(--inp-bg);border:1px solid var(--border-s);border-radius:5px;padding:0 8px;font-size:.85rem;color:var(--text);font-family:inherit;outline:none;min-width:60px}
+.ce-inp:focus{border-color:var(--accent)}
+.ce-save{height:30px;padding:0 13px;border-radius:5px;border:none;background:var(--accent);color:#fff;font-size:.82rem;font-weight:600;font-family:inherit;white-space:nowrap}
+.ce-cancel{height:30px;padding:0 11px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:.82rem;font-family:inherit}
+.ce-del-full{height:30px;padding:0 11px;border-radius:5px;border:1px solid var(--accent-l);background:transparent;color:var(--accent);font-size:.82rem;font-family:inherit;transition:.15s}
+.ce-del-full:hover{background:var(--accent-l)}
+
+/* ── Quick-Add Form ── */
+.qadd{background:var(--q-bg);border-bottom:1px solid var(--border);padding:14px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;backdrop-filter:blur(8px)}
+.qa-field{display:flex;flex-direction:column;gap:4px;flex:1;min-width:80px}
+.qa-field label{font-size:.73rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text2)}
+.qa-inp{height:36px;background:var(--inp-bg);border:1px solid var(--border-s);border-radius:var(--r-s);padding:0 10px;font-size:.88rem;color:var(--text);font-family:inherit;outline:none;transition:.2s;width:100%}
+.qa-inp:focus{border-color:var(--accent);background:var(--card-s);box-shadow:0 0 0 2px var(--accent-l)}
+.qa-inp option{background:var(--card-s);color:var(--text)}
+.qa-cat-wrap{position:relative}
+.cat-dot-sel{position:absolute;left:8px;top:50%;transform:translateY(-50%);width:8px;height:8px;border-radius:50%;pointer-events:none;transition:.2s}
+.qa-inp.has-dot{padding-left:22px}
+.qa-btn{height:36px;padding:0 18px;border-radius:var(--r-s);border:none;background:var(--accent);color:#fff;font-size:.88rem;font-weight:600;font-family:inherit;white-space:nowrap;transition:.15s;flex-shrink:0}
+.qa-btn:hover{opacity:.88}
+.qa-btn:active{transform:scale(.97)}
+
+/* ── Entry List ── */
+.elist{padding:10px 12px;display:flex;flex-direction:column;gap:4px;max-height:460px;overflow-y:auto}
+.elist-empty{padding:32px 20px;text-align:center;color:var(--text2);font-size:.9rem}
+.entry{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--r-s);background:var(--entry-bg);border:1px solid transparent;transition:.15s;cursor:pointer}
+.entry:hover{background:var(--entry-h);border-color:var(--border)}
+.entry.editing{background:var(--entry-h);border-color:var(--border-s);box-shadow:0 0 0 2px var(--accent-l)}
+.e-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.e-date{font-size:.78rem;color:var(--text2);white-space:nowrap;min-width:36px;font-weight:500}
+.e-cat{font-size:.82rem;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.e-memo{font-size:.78rem;color:var(--text2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.e-amount{font-size:.92rem;font-weight:600;color:var(--text);white-space:nowrap;font-family:'DM Sans',sans-serif}
+.e-del{width:22px;height:22px;border:none;background:transparent;color:var(--text3);font-size:.75rem;opacity:0;transition:.15s;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.entry:hover .e-del{opacity:1}
+.e-del:hover{background:var(--accent-l);color:var(--accent)}
+
+/* Inline edit row */
+.entry-edit-row{background:var(--entry-h);border:1px solid var(--border-s);border-radius:var(--r-s);padding:10px 12px;display:flex;flex-wrap:wrap;gap:7px;align-items:flex-end;box-shadow:0 0 0 2px var(--accent-l);margin:2px 0}
+.ee-inp{height:32px;background:var(--inp-bg);border:1px solid var(--border-s);border-radius:6px;padding:0 8px;font-size:.85rem;color:var(--text);font-family:inherit;outline:none;flex:1;min-width:70px;transition:.2s}
+.ee-inp:focus{border-color:var(--accent)}
+.ee-inp option{background:var(--card-s);color:var(--text)}
+.ee-actions{display:flex;gap:5px;flex-shrink:0}
+.ee-save{height:32px;padding:0 14px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:.82rem;font-weight:600;font-family:inherit}
+.ee-cancel{height:32px;padding:0 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:.82rem;font-family:inherit}
+
+/* ── Right Column ── */
+.right-col{display:flex;flex-direction:column;gap:16px}
+
+/* Income / Fixed rows */
+.item-row{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:var(--r-s);background:var(--entry-bg);transition:.15s}
+.item-row:hover{background:var(--entry-h)}
+.ir-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.ir-name{flex:1;font-size:.88rem;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.ir-amt{font-size:.9rem;font-weight:600;color:var(--text);font-family:'DM Sans',sans-serif;white-space:nowrap}
+.ir-inp{width:108px;height:28px;background:var(--inp-bg);border:1px solid var(--border-s);border-radius:5px;padding:0 7px;font-size:.88rem;color:var(--text);font-family:inherit;outline:none;text-align:right}
+.ir-inp:focus{border-color:var(--accent)}
+.items-body{padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.items-total{display:flex;justify-content:space-between;padding:8px 10px 6px;border-top:1px solid var(--border);font-size:.82rem;color:var(--text2);font-weight:600}
+.items-total span:last-child{color:var(--text);font-size:.92rem}
+
+/* ── Charts ── */
+.chart-wrap{position:relative;height:200px;width:100%;display:flex;justify-content:center}
+
+/* ── Modal ── */
+.modal-ov{position:fixed;inset:0;z-index:100;background:var(--modal-ov);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--card-s);border-radius:var(--r);box-shadow:var(--sh-lg);width:100%;max-width:520px;max-height:90vh;display:flex;flex-direction:column;border:1px solid var(--border-s)}
+.modal-hdr{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.modal-title{font-size:1rem;font-weight:700;color:var(--text)}
+.modal-x{width:28px;height:28px;border:none;background:var(--badge-bg);border-radius:6px;color:var(--text2);font-size:1rem;display:flex;align-items:center;justify-content:center;transition:.15s}
+.modal-x:hover{background:var(--accent-l);color:var(--accent)}
+.modal-body{padding:16px 20px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px}
+.modal-foot{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+
+/* Item edit list */
+.mi-row{display:flex;align-items:center;gap:7px;padding:8px 10px;background:var(--entry-bg);border-radius:var(--r-s);border:1px solid transparent;transition:.15s}
+.mi-row:hover{background:var(--entry-h);border-color:var(--border)}
+.mi-inp{height:32px;flex:1;background:var(--inp-bg);border:1px solid var(--border-s);border-radius:5px;padding:0 8px;font-size:.88rem;color:var(--text);font-family:inherit;outline:none;min-width:60px}
+.mi-inp:focus{border-color:var(--accent)}
+.mi-num{width:90px;height:32px;text-align:right}
+.mi-color{width:30px;height:30px;border:2px solid var(--border);border-radius:5px;cursor:pointer;padding:0}
+.mi-del{width:26px;height:26px;border:none;background:transparent;color:var(--text3);border-radius:4px;transition:.15s;display:flex;align-items:center;justify-content:center}
+.mi-del:hover{background:var(--accent-l);color:var(--accent)}
+.mi-add{height:34px;width:100%;border:1px dashed var(--border-s);border-radius:var(--r-s);background:transparent;color:var(--text2);font-size:.85rem;transition:.15s}
+.mi-add:hover{background:var(--badge-bg);color:var(--text);border-color:var(--accent)}
+
+/* Settings form */
+.sf-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.sf-row:last-child{border-bottom:none}
+.sf-label{font-size:.9rem;color:var(--text)}
+.sf-inp{height:34px;width:90px;background:var(--inp-bg);border:1px solid var(--border-s);border-radius:6px;padding:0 8px;font-size:.9rem;color:var(--text);font-family:inherit;outline:none;text-align:center}
+.sf-inp:focus{border-color:var(--accent)}
+
+/* Btn */
+.btn{height:36px;padding:0 18px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:.88rem;font-weight:500;font-family:inherit;transition:.15s}
+.btn:hover{background:var(--badge-bg);color:var(--text)}
+.btn.prim{background:var(--accent);color:#fff;border-color:transparent}
+.btn.prim:hover{opacity:.88}
+
+/* Month total bar */
+.month-bar{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--badge-bg);border-top:1px solid var(--border);font-size:.85rem;color:var(--text2);font-weight:500}
+.month-bar strong{color:var(--text);font-family:'DM Sans',sans-serif;font-size:.95rem}
+
+
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useMemo,useCallback}=React;
+
+/* ── Defaults ── */
+const DEF_CATS=[
+  {id:'c1',name:'食費',color:'#e07b5b'},
+  {id:'c2',name:'外食費',color:'#d4a05a'},
+  {id:'c3',name:'日用品',color:'#8cb87a'},
+  {id:'c4',name:'交通費',color:'#5b9bd5'},
+  {id:'c5',name:'医療費',color:'#9b7ec8'},
+  {id:'c6',name:'交際費',color:'#6bc5b8'},
+  {id:'c7',name:'娯楽費',color:'#f0c75e'},
+  {id:'c8',name:'美容費',color:'#c97bb2'},
+  {id:'c9',name:'その他',color:'#a0917e'},
+];
+const DEF_INCOME=[
+  {id:'i1',name:'給料',amount:250000,color:'#5ba882'},
+  {id:'i2',name:'副業',amount:0,color:'#7b9ee8'},
+];
+const DEF_FIXED=[
+  {id:'f1',name:'家賃',amount:80000,color:'#5b7ec8'},
+  {id:'f2',name:'電気・ガス',amount:8000,color:'#f0c75e'},
+  {id:'f3',name:'スマホ',amount:5000,color:'#9b7ec8'},
+  {id:'f4',name:'サブスク',amount:3000,color:'#e07b5b'},
+];
+const DEF_SETTINGS={categories:DEF_CATS,incomeItems:DEF_INCOME,fixedItems:DEF_FIXED,payday:25,startDay:1,theme:'light'};
+
+const LS_SETTINGS='kakeibo-settings-v3';
+const lsEntryKey=(y,m)=>`kakeibo-entries-v3-${y}-${String(m).padStart(2,'0')}`;
+const uid=()=>Math.random().toString(36).slice(2,9);
+const yen=(n)=>new Intl.NumberFormat('ja-JP',{style:'currency',currency:'JPY',maximumFractionDigits:0}).format(n||0);
+const pad2=n=>String(n).padStart(2,'0');
+const todayStr=()=>{const d=new Date();return`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`};
+
+/* ── Chart Component ── */
+function DonutChart({data,size=180}){
+  const ref=useRef(null);
+  const chartRef=useRef(null);
+  useEffect(()=>{
+    if(!ref.current)return;
+    if(chartRef.current)chartRef.current.destroy();
+    const total=data.reduce((a,d)=>a+d.value,0);
+    if(!total){chartRef.current=null;return;}
+    chartRef.current=new Chart(ref.current,{type:'doughnut',data:{
+      labels:data.map(d=>d.label),
+      datasets:[{data:data.map(d=>d.value),backgroundColor:data.map(d=>d.color),borderWidth:0,hoverOffset:4}]
+    },options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.label}: ${yen(c.raw)}`}}}}});
+    return()=>{if(chartRef.current){chartRef.current.destroy();chartRef.current=null;}};
+  },[JSON.stringify(data)]);
+  return <canvas ref={ref} style={{maxWidth:size+'px',maxHeight:size+'px'}}/>;
+}
+
+/* ── EditItemsModal ── */
+function EditItemsModal({title,items,hasColor,hasAmount,onSave,onClose}){
+  const [list,setList]=useState(()=>items.map(i=>({...i})));
+  const update=(id,k,v)=>setList(l=>l.map(i=>i.id===id?{...i,[k]:k==='amount'?Number(v)||0:v}:i));
+  const del=(id)=>setList(l=>l.filter(i=>i.id!==id));
+  const add=()=>setList(l=>[...l,{id:uid(),name:'新しい項目',amount:0,color:'#a09485'}]);
+  return(
+    <div className="modal-ov" onClick={onClose}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div className="modal-hdr">
+          <span className="modal-title">{title}</span>
+          <button className="modal-x" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          {list.map(item=>(
+            <div key={item.id} className="mi-row">
+              {hasColor&&<input type="color" className="mi-color" value={item.color||'#a09485'} onChange={e=>update(item.id,'color',e.target.value)}/>}
+              <input className="mi-inp" value={item.name} onChange={e=>update(item.id,'name',e.target.value)} placeholder="項目名"/>
+              {hasAmount&&<input type="number" className="mi-inp mi-num" value={item.amount||''} onChange={e=>update(item.id,'amount',e.target.value)} placeholder="金額"/>}
+              <button className="mi-del" onClick={()=>del(item.id)}>✕</button>
+            </div>
+          ))}
+          <button className="mi-add" onClick={add}>＋ 項目を追加</button>
+        </div>
+        <div className="modal-foot">
+          <button className="btn" onClick={onClose}>キャンセル</button>
+          <button className="btn prim" onClick={()=>onSave(list)}>保存</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── SettingsModal ── */
+function SettingsModal({settings,onSave,onClose}){
+  const [payday,setPayday]=useState(settings.payday);
+  const [startDay,setStartDay]=useState(settings.startDay);
+  return(
+    <div className="modal-ov" onClick={onClose}>
+      <div className="modal" onClick={e=>e.stopPropagation()} style={{maxWidth:360}}>
+        <div className="modal-hdr">
+          <span className="modal-title">設定</span>
+          <button className="modal-x" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          <div className="sf-row">
+            <span className="sf-label">給与日（毎月〇日）</span>
+            <input type="number" className="sf-inp" min="1" max="31" value={payday} onChange={e=>setPayday(Number(e.target.value))}/>
+          </div>
+          <div className="sf-row">
+            <span className="sf-label">家計簿の開始日</span>
+            <input type="number" className="sf-inp" min="1" max="31" value={startDay} onChange={e=>setStartDay(Number(e.target.value))}/>
+          </div>
+        </div>
+        <div className="modal-foot">
+          <button className="btn" onClick={onClose}>キャンセル</button>
+          <button className="btn prim" onClick={()=>onSave({payday,startDay})}>保存</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── EntryEditRow (inline) ── */
+function EntryEditRow({entry,categories,onSave,onCancel}){
+  const [form,setForm]=useState({date:entry.date,categoryId:entry.categoryId,amount:entry.amount,memo:entry.memo||''});
+  const upd=(k,v)=>setForm(f=>({...f,[k]:v}));
+  const cat=categories.find(c=>c.id===form.categoryId)||categories[0];
+  return(
+    <div className="entry-edit-row">
+      <input type="date" className="ee-inp" style={{minWidth:120}} value={form.date} onChange={e=>upd('date',e.target.value)}/>
+      <select className="ee-inp" value={form.categoryId} onChange={e=>upd('categoryId',e.target.value)}>
+        {categories.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
+      </select>
+      <input type="number" className="ee-inp" style={{minWidth:80,textAlign:'right'}} value={form.amount||''} onChange={e=>upd('amount',Number(e.target.value)||0)} placeholder="金額"/>
+      <input className="ee-inp" style={{minWidth:80}} value={form.memo} onChange={e=>upd('memo',e.target.value)} placeholder="メモ"/>
+      <div className="ee-actions">
+        <button className="ee-save" onClick={()=>onSave({...entry,...form})}>保存</button>
+        <button className="ee-cancel" onClick={onCancel}>×</button>
+      </div>
+    </div>
+  );
+}
+
+/* ── CatManager (inline) ── */
+function CatManager({categories,onChange}){
+  const [open,setOpen]=useState(true);
+  const [editId,setEditId]=useState(null); // id being edited, or 'new'
+  const [editName,setEditName]=useState('');
+  const [editColor,setEditColor]=useState('#a09485');
+
+  const startEdit=(cat)=>{
+    setEditId(cat.id);setEditName(cat.name);setEditColor(cat.color||'#a09485');
+  };
+  const startNew=()=>{
+    setEditId('new');setEditName('');setEditColor('#'+Math.floor(Math.random()*0xaaaaaa+0x444444).toString(16).padStart(6,'0'));
+  };
+  const cancel=()=>setEditId(null);
+  const save=()=>{
+    if(!editName.trim())return;
+    if(editId==='new'){
+      onChange([...categories,{id:uid(),name:editName.trim(),color:editColor}]);
+    } else {
+      onChange(categories.map(c=>c.id===editId?{...c,name:editName.trim(),color:editColor}:c));
+    }
+    setEditId(null);
+  };
+  const del=(id)=>{
+    onChange(categories.filter(c=>c.id!==id));
+    if(editId===id)setEditId(null);
+  };
+  const onKey=e=>{if(e.key==='Enter')save();if(e.key==='Escape')cancel();};
+
+  return(
+    <div className="cat-mgr">
+      <div className="cat-mgr-hdr" onClick={()=>setOpen(o=>!o)}>
+        <span className="cat-mgr-label">
+          <span style={{width:6,height:6,borderRadius:'50%',background:'var(--accent2)',display:'inline-block'}}/>
+          カテゴリ管理
+          <span style={{fontSize:'.7rem',color:'var(--text3)',fontWeight:400,marginLeft:2}}>({categories.length})</span>
+        </span>
+        <span className="cat-mgr-toggle" style={{transform:open?'rotate(180deg)':'rotate(0deg)',display:'inline-block'}}>▾</span>
+      </div>
+
+      {open&&(
+        <>
+          <div className="cat-chips">
+            {categories.map(c=>(
+              <button key={c.id} className={`cat-chip${editId===c.id?' active':''}`} onClick={()=>editId===c.id?cancel():startEdit(c)}>
+                <span className="cc-dot" style={{background:c.color||'#a09485'}}/>
+                <span className="cc-name">{c.name}</span>
+                <span className="cc-del" onClick={e=>{e.stopPropagation();del(c.id);}}>✕</span>
+              </button>
+            ))}
+            <button className="cat-chip-add" onClick={()=>editId==='new'?cancel():startNew()}>
+              {editId==='new'?'✕ キャンセル':'＋ 追加'}
+            </button>
+          </div>
+
+          {editId&&(
+            <div className="cat-chip-edit">
+              <input type="color" className="ce-color" value={editColor} onChange={e=>setEditColor(e.target.value)}/>
+              <input className="ce-inp" value={editName} onChange={e=>setEditName(e.target.value)} onKeyDown={onKey} placeholder="カテゴリ名" autoFocus/>
+              <button className="ce-save" onClick={save}>保存</button>
+              <button className="ce-cancel" onClick={cancel}>×</button>
+              {editId!=='new'&&<button className="ce-del-full" onClick={()=>del(editId)}>削除</button>}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ── QuickAdd ── */
+function QuickAdd({categories,year,month,onAdd}){
+  const [form,setForm]=useState({date:todayStr(),categoryId:categories[0]?.id||'',amount:'',memo:''});
+  const upd=(k,v)=>setForm(f=>({...f,[k]:v}));
+  const cat=categories.find(c=>c.id===form.categoryId);
+
+  // keep categoryId valid when categories change
+  useEffect(()=>{
+    if(!categories.find(c=>c.id===form.categoryId)&&categories[0]){
+      setForm(f=>({...f,categoryId:categories[0].id}));
+    }
+  },[categories]);
+
+  const submit=()=>{
+    if(!form.amount||!form.categoryId)return;
+    onAdd({id:uid(),date:form.date,categoryId:form.categoryId,amount:Number(form.amount),memo:form.memo});
+    setForm(f=>({...f,amount:'',memo:''}));
+  };
+  const onKey=e=>{ if(e.key==='Enter')submit(); };
+
+  return(
+    <div className="qadd">
+      <div className="qa-field" style={{maxWidth:130}}>
+        <label>日付</label>
+        <input type="date" className="qa-inp" value={form.date} onChange={e=>upd('date',e.target.value)}/>
+      </div>
+      <div className="qa-field" style={{minWidth:100,maxWidth:150}}>
+        <label>カテゴリ</label>
+        <div className="qa-cat-wrap">
+          <div className="cat-dot-sel" style={{background:cat?.color||'#a09485'}}/>
+          <select className="qa-inp has-dot" value={form.categoryId} onChange={e=>upd('categoryId',e.target.value)}>
+            {categories.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="qa-field" style={{maxWidth:110}}>
+        <label>金額 (¥)</label>
+        <input type="number" className="qa-inp" value={form.amount} onChange={e=>upd('amount',e.target.value)} onKeyDown={onKey} placeholder="0" style={{textAlign:'right'}}/>
+      </div>
+      <div className="qa-field" style={{minWidth:90}}>
+        <label>メモ</label>
+        <input className="qa-inp" value={form.memo} onChange={e=>upd('memo',e.target.value)} onKeyDown={onKey} placeholder="（任意）"/>
+      </div>
+      <button className="qa-btn" onClick={submit}>＋ 追加</button>
+    </div>
+  );
+}
+
+/* ── Main App ── */
+function App(){
+  const [settings,setSettings]=useState(()=>{
+    try{const s=JSON.parse(localStorage.getItem(LS_SETTINGS));return s?{...DEF_SETTINGS,...s}:DEF_SETTINGS;}catch{return DEF_SETTINGS;}
+  });
+  const [year,setYear]=useState(()=>new Date().getFullYear());
+  const [month,setMonth]=useState(()=>new Date().getMonth()+1);
+  const [entries,setEntries]=useState(()=>{
+    try{return JSON.parse(localStorage.getItem(lsEntryKey(new Date().getFullYear(),new Date().getMonth()+1)))||[];}catch{return [];}
+  });
+  const [modal,setModal]=useState(null);
+  const [editingId,setEditingId]=useState(null);
+  // income edit state
+  const [incAmounts,setIncAmounts]=useState(()=>Object.fromEntries((settings.incomeItems||[]).map(i=>[i.id,i.amount])));
+
+  const {categories,incomeItems,fixedItems,payday,theme}=settings;
+
+  // sync theme
+  useEffect(()=>{document.documentElement.setAttribute('data-theme',theme);},[theme]);
+  const toggleTheme=()=>setSettings(s=>({...s,theme:s.theme==='dark'?'light':'dark'}));
+
+  // persist settings
+  useEffect(()=>{localStorage.setItem(LS_SETTINGS,JSON.stringify(settings));},[settings]);
+  // persist entries
+  useEffect(()=>{localStorage.setItem(lsEntryKey(year,month),JSON.stringify(entries));},[entries,year,month]);
+  // load entries on month change
+  useEffect(()=>{
+    try{setEntries(JSON.parse(localStorage.getItem(lsEntryKey(year,month)))||[]);}catch{setEntries([]);}
+  },[year,month]);
+  // sync incAmounts when incomeItems change
+  useEffect(()=>{
+    setIncAmounts(am=>Object.fromEntries(incomeItems.map(i=>[i.id,am[i.id]??i.amount])));
+  },[incomeItems]);
+
+  const prevM=()=>{if(month===1){setYear(y=>y-1);setMonth(12);}else setMonth(m=>m-1);}
+  const nextM=()=>{if(month===12){setYear(y=>y+1);setMonth(1);}else setMonth(m=>m+1);}
+  const goToday=()=>{const d=new Date();setYear(d.getFullYear());setMonth(d.getMonth()+1);}
+
+  // Totals
+  const incomeTotal=incomeItems.reduce((a,i)=>(incAmounts[i.id]??i.amount)+a,0);
+  const fixedTotal=fixedItems.reduce((a,f)=>a+f.amount,0);
+  const varTotal=entries.reduce((a,e)=>a+e.amount,0);
+  const savings=incomeTotal-fixedTotal-varTotal;
+
+  const daysUntilPayday=useMemo(()=>{
+    const t=new Date();
+    let d=new Date(t.getFullYear(),t.getMonth(),payday);
+    if(d<=t)d=new Date(t.getFullYear(),t.getMonth()+1,payday);
+    return Math.ceil((d-t)/(86400000));
+  },[payday]);
+
+  const addEntry=useCallback(entry=>{
+    setEntries(es=>[...es,entry].sort((a,b)=>a.date.localeCompare(b.date)));
+  },[]);
+  const saveEntry=useCallback(entry=>{
+    setEntries(es=>es.map(e=>e.id===entry.id?entry:e));
+    setEditingId(null);
+  },[]);
+  const delEntry=useCallback(id=>{setEntries(es=>es.filter(e=>e.id!==id));},[]);
+
+  // category map
+  const catMap=useMemo(()=>Object.fromEntries(categories.map(c=>[c.id,c])),[categories]);
+
+  // chart data: variable breakdown
+  const varChartData=useMemo(()=>{
+    const totals={};
+    entries.forEach(e=>{totals[e.categoryId]=(totals[e.categoryId]||0)+e.amount;});
+    return Object.entries(totals).map(([id,v])=>({label:catMap[id]?.name||id,value:v,color:catMap[id]?.color||'#a09485'}));
+  },[entries,catMap]);
+
+  // chart data: full breakdown
+  const fullChartData=useMemo(()=>[
+    ...fixedItems.map(f=>({label:f.name,value:f.amount,color:f.color||'#5b7ec8'})),
+    ...varChartData
+  ],[fixedItems,varChartData]);
+
+  // sorted entries for display
+  const sortedEntries=useMemo(()=>[...entries].sort((a,b)=>a.date.localeCompare(b.date)),[entries]);
+
+  // update income amount inline
+  const setIncAmt=(id,v)=>setIncAmounts(a=>({...a,[id]:Number(v)||0}));
+  // sync back to settings on blur
+  const syncIncome=()=>{
+    setSettings(s=>({...s,incomeItems:s.incomeItems.map(i=>({...i,amount:incAmounts[i.id]??i.amount}))}));
+  };
+
+  return(
+    <div>
+      {/* Background */}
+      <div className="bg">
+        <div className="bg-grid"/>
+        <div className="bg-vlines"/>
+        <div className="orb orb1"/><div className="orb orb2"/><div className="orb orb3"/>
+      </div>
+
+      <div className="app">
+        {/* Header */}
+        <div className="hdr">
+          <div className="logo">家計簿<em>Kakeibo</em></div>
+          <div className="hdr-right">
+            <button className="tog" onClick={toggleTheme} title="ダーク/ライト切替"/>
+            <button className="hdr-btn" onClick={()=>setModal({mode:'settings'})}>⚙ 設定</button>
+            <button className="hdr-btn" onClick={goToday}>今月</button>
+            <div className="month-nav">
+              <button onClick={prevM}>◀</button>
+              <span className="month-label">{year}年 {month}月</span>
+              <button onClick={nextM}>▶</button>
+            </div>
+          </div>
+        </div>
+
+        {/* Summary */}
+        <div className="summ">
+          <div className="sc">
+            <div className="sc-label"><span className="sc-dot" style={{background:'var(--green)'}}/>収入 INCOME</div>
+            <div className="sc-val">{yen(incomeTotal)}</div>
+            <div className="sc-sub">給与日: 毎月{payday}日（あと{daysUntilPayday}日）</div>
+          </div>
+          <div className="sc">
+            <div className="sc-label"><span className="sc-dot" style={{background:'var(--blue)'}}/>固定費 FIXED</div>
+            <div className="sc-val">{yen(fixedTotal)}</div>
+            <div className="sc-sub">{fixedItems.length}項目</div>
+          </div>
+          <div className="sc">
+            <div className="sc-label"><span className="sc-dot" style={{background:'var(--accent)'}}/>変動費 VARIABLE</div>
+            <div className="sc-val">{yen(varTotal)}</div>
+            <div className="sc-sub">{entries.length}件の支出</div>
+          </div>
+          <div className={`sc savings${savings<0?' neg':''}`}>
+            <div className="sc-label"><span className="sc-dot" style={{background:savings>=0?'var(--green)':'var(--accent)'}}/>貯金 SAVINGS</div>
+            <div className="sc-val">{yen(savings)}</div>
+            <div className="sc-sub">収入 − 固定 − 変動</div>
+          </div>
+        </div>
+
+        {/* Main */}
+        <div className="main">
+          {/* Left: Variable expenses */}
+          <div className="panel">
+            <div className="panel-hdr">
+              <div className="panel-title">
+                <span className="panel-title-dot"/>変動費
+              </div>
+            </div>
+
+            {/* Quick-add form */}
+            <QuickAdd categories={categories} year={year} month={month} onAdd={addEntry}/>
+
+            {/* Inline category manager */}
+            <CatManager categories={categories} onChange={list=>setSettings(s=>({...s,categories:list}))}/>
+
+            {/* Entry list */}
+            <div className="elist">
+              {sortedEntries.length===0
+                ? <div className="elist-empty">まだ支出がありません<br/>上のフォームから追加してください</div>
+                : sortedEntries.map(e=>(
+                  editingId===e.id
+                    ? <EntryEditRow key={e.id} entry={e} categories={categories} onSave={saveEntry} onCancel={()=>setEditingId(null)}/>
+                    : <div key={e.id} className="entry" onClick={()=>setEditingId(e.id)}>
+                        <span className="e-dot" style={{background:catMap[e.id]?.color||catMap[e.categoryId]?.color||'#a09485'}}/>
+                        <span className="e-date">{e.date.slice(5).replace('-','/')}</span>
+                        <span className="e-cat">{catMap[e.categoryId]?.name||'—'}</span>
+                        <span className="e-memo">{e.memo||''}</span>
+                        <span className="e-amount">{yen(e.amount)}</span>
+                        <button className="e-del" onClick={ev=>{ev.stopPropagation();delEntry(e.id);}}>✕</button>
+                      </div>
+                ))
+              }
+            </div>
+            {entries.length>0&&(
+              <div className="month-bar">
+                <span>今月合計</span>
+                <strong>{yen(varTotal)}</strong>
+              </div>
+            )}
+          </div>
+
+          {/* Right column */}
+          <div className="right-col">
+            {/* Income */}
+            <div className="panel">
+              <div className="panel-hdr">
+                <div className="panel-title"><span className="panel-title-dot" style={{background:'var(--green)'}}/>収入</div>
+                <button className="icon-btn" onClick={()=>setModal({mode:'editIncome'})}>✎</button>
+              </div>
+              <div className="items-body">
+                {incomeItems.map(i=>(
+                  <div key={i.id} className="item-row">
+                    <span className="ir-dot" style={{background:i.color||'#5ba882'}}/>
+                    <span className="ir-name">{i.name}</span>
+                    <input type="number" className="ir-inp" value={incAmounts[i.id]??i.amount}
+                      onChange={e=>setIncAmt(i.id,e.target.value)}
+                      onBlur={syncIncome}/>
+                  </div>
+                ))}
+              </div>
+              <div className="items-total"><span>合計</span><span>{yen(incomeTotal)}</span></div>
+            </div>
+
+            {/* Fixed */}
+            <div className="panel">
+              <div className="panel-hdr">
+                <div className="panel-title"><span className="panel-title-dot" style={{background:'var(--blue)'}}/>固定費</div>
+                <button className="icon-btn" onClick={()=>setModal({mode:'editFixed'})}>✎</button>
+              </div>
+              <div className="items-body">
+                {fixedItems.map(f=>(
+                  <div key={f.id} className="item-row">
+                    <span className="ir-dot" style={{background:f.color||'#5b7ec8'}}/>
+                    <span className="ir-name">{f.name}</span>
+                    <span className="ir-amt">{yen(f.amount)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="items-total"><span>合計</span><span>{yen(fixedTotal)}</span></div>
+            </div>
+
+            {/* Charts */}
+            {varTotal>0&&(
+              <div className="panel">
+                <div className="panel-hdr">
+                  <div className="panel-title"><span className="panel-title-dot" style={{background:'var(--accent2)'}}/>変動費の内訳</div>
+                </div>
+                <div style={{padding:'16px 20px'}}>
+                  <div className="chart-wrap"><DonutChart data={varChartData}/></div>
+                  <div style={{display:'flex',flexWrap:'wrap',gap:'6px 12px',marginTop:14}}>
+                    {varChartData.map(d=>(
+                      <div key={d.label} style={{display:'flex',alignItems:'center',gap:5,fontSize:'.74rem',color:'var(--text2)'}}>
+                        <span style={{width:7,height:7,borderRadius:'50%',background:d.color,flexShrink:0}}/>
+                        {d.label} <span style={{color:'var(--text3)',fontSize:'.7rem'}}>({yen(d.value)})</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+            {(varTotal+fixedTotal)>0&&(
+              <div className="panel">
+                <div className="panel-hdr">
+                  <div className="panel-title"><span className="panel-title-dot" style={{background:'var(--blue)'}}/>今月の内訳</div>
+                </div>
+                <div style={{padding:'16px 20px'}}>
+                  <div className="chart-wrap"><DonutChart data={fullChartData}/></div>
+                  <div style={{display:'flex',flexWrap:'wrap',gap:'4px 10px',marginTop:12}}>
+                    <div style={{width:'100%',display:'flex',justifyContent:'space-between',fontSize:'.78rem',color:'var(--text3)',padding:'4px 0',borderBottom:'1px solid var(--border)'}}>
+                      <span>固定費合計</span><strong style={{color:'var(--text)'}}>{yen(fixedTotal)}</strong>
+                    </div>
+                    <div style={{width:'100%',display:'flex',justifyContent:'space-between',fontSize:'.78rem',color:'var(--text3)',padding:'4px 0'}}>
+                      <span>変動費合計</span><strong style={{color:'var(--text)'}}>{yen(varTotal)}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Modals */}
+      {modal?.mode==='settings'&&(
+        <SettingsModal settings={settings}
+          onSave={s=>{setSettings(prev=>({...prev,...s}));setModal(null);}}
+          onClose={()=>setModal(null)}/>
+      )}
+      {modal?.mode==='editIncome'&&(
+        <EditItemsModal title="収入項目の編集" items={incomeItems} hasColor={false} hasAmount
+          onSave={list=>{setSettings(s=>({...s,incomeItems:list}));setModal(null);}}
+          onClose={()=>setModal(null)}/>
+      )}
+      {modal?.mode==='editFixed'&&(
+        <EditItemsModal title="固定費項目の編集" items={fixedItems} hasColor hasAmount
+          onSave={list=>{setSettings(s=>({...s,fixedItems:list}));setModal(null);}}
+          onClose={()=>setModal(null)}/>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
